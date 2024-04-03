@@ -13,7 +13,7 @@ Este módulo provisionar os seguintes recursos:
 
 6: [DNS Recourd - Route53](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record)
 
-**_Importante:_** A documentação da haschicorp é bem completa, se quiserem dar uma olhada, segue o link do glossário com todos os recursos do terraform: https://registry.terraform.io/providers/hashicorp/aws/latest/docs
+**_Importante (1):_** A documentação da haschicorp é bem completa, se quiserem dar uma olhada, segue o link do glossário com todos os recursos do terraform: https://registry.terraform.io/providers/hashicorp/aws/latest/docs
 
 **_Importante (2):_** Esse repositório terá duas possibilidades, uma na criação de um RDS single-az com duas zonas de disponibilidade e outra multi-az com réplica de banco de dados em três zonas de disponibilidade, basta escolher qual você deverá seguir.
 
