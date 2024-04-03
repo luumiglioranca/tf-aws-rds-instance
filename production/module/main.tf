@@ -5,7 +5,7 @@
 #########################################################################################################
 
 module "rds_intance" {
-  source = "git@github.com:luumiglioranca/tf-aws-db-rds-instance.git//resource"
+  source = "git@github.com:luumiglioranca/tf-aws-db-rds-instance.git//production/resource"
 
   # Configurações do RDS
   db_name              = local.resource_name
@@ -20,12 +20,12 @@ module "rds_intance" {
   auto_version_upgrade = local.true_options
   apply_immediately    = local.true_options
   skip_final_snapshot  = local.true_options
-  #iops_for_disk        = local.iops_for_disk
-  ca_cert_identifier = local.ca_cert_identifier
+  ca_cert_identifier   = local.ca_cert_identifier
+  #iops_for_disk       = local.iops_for_disk
 
   # Credenciais para o Root Database
-  username = local.master_username
-  password = local.master_password
+  username = "admin"
+  password = random_password.password.result
 
   # Logs & perfomance
   enabled_cloudwatch_logs_exports = ["error", "general", "slowquery"]
@@ -59,9 +59,8 @@ module "rds_intance" {
 
     subnet_ids = [
       data.aws_subnet.priv_1a.id,
-      data.aws_subnet.priv_1b.id
-      #Se precisar de três zonas de disponibilidade, descomentar a linha 64 :)
-      #data.aws_subnet.priv_1c.id
+      data.aws_subnet.priv_1b.id,
+      data.aws_subnet.priv_1c.id
     ]
   }]
 
@@ -73,6 +72,18 @@ module "rds_intance" {
 
   #Tags
   default_tags = local.default_tags
+}
+
+############################################################################################
+#                                                                                          #
+#                        GERAÇÃO DE UMA SENHA RANDÔMICA PARA O RDS :)                      #
+#                                                                                          # 
+############################################################################################ 
+
+resource "random_password" "password" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}:?"
 }
 
 ############################################################################################
@@ -115,4 +126,43 @@ module "security_group_for_rds" {
       Name = "sg-${local.resource_name}"
 
   }, local.default_tags)
+}
+
+#########################################################################################################
+#                                                                                                       #
+#                 MÓDULO PARA A CRIAÇÃO DA NOSSA REPLICA PRODUTIVA DE BANCO DE DADOS (RDS)              #
+#                                                                                                       #
+#########################################################################################################
+
+module "rds_intance_replica" {
+  source = "git@github.com:luumiglioranca/tf-aws-db-rds-instance.git//production/resource"
+  
+ # Configurações da réplica
+  db_name                         = "${local.resource_name}-replica"
+  instance_type                   = local.instance_type
+  db_replicate_source             = module.rds_intance.db_name
+  security_group_id               = [module.security_group_for_rds.security_group_id]
+  skip_final_snapshot             = local.true_options
+  storage_encrypted               = local.true_options
+  publicly_accessible             = local.publicly_accessible
+  auto_version_upgrade            = local.true_options
+  apply_immediately               = local.true_options
+  enabled_cloudwatch_logs_exports = ["error", "general", "slowquery"]
+  parameter_group_name            = "${local.resource_name}-parameter"
+  default_tags                    = local.default_tags
+  create_timeouts                 = "60m"
+  multi_az                        = "false"
+  performance_insights_enabled    = "false"
+  enabled_depends_on              = [module.rds_intance]
+}
+
+resource "aws_route53_record" "route_53_replica" {
+  provider   = aws.atena
+  zone_id    = data.aws_route53_zone.edtech.zone_id
+  
+  name       = "${local.resource_name}-replica.${local.domain_name}"
+  type       = "CNAME"
+  ttl        = "10"
+  records    = [module.rds_intance_replica.endpoint_address]
+  depends_on = [module.rds_intance_replica]
 }
