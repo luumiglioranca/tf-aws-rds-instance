@@ -1,5 +1,5 @@
 # AWS Terraform - DB Instance
-Este módulo irá provisionar os seguintes recursos:
+Este módulo provisionar os seguintes recursos:
 
 1: [IAM Role - Monitoring RDS](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role)
 
@@ -15,7 +15,10 @@ Este módulo irá provisionar os seguintes recursos:
 
 **_Importante:_** A documentação da haschicorp é bem completa, se quiserem dar uma olhada, segue o link do glossário com todos os recursos do terraform: https://registry.terraform.io/providers/hashicorp/aws/latest/docs
 
-## Exemplo de um module pré-configurado :)
+**_Importante (2):_** Esse repositório terá duas possibilidades, uma na criação de um RDS single-az com duas zonas de disponibilidade e outra multi-az com réplica de banco de dados em três zonas de disponibilidade, basta escolher qual você deverá seguir.
+
+## Exemplo de um module pré-configurado [SINGLE-AZ]:)
+
 ### Primeiro um exemplo prático de criação de um security group para o RDS
 `Caso de uso`:  Module para criação do SG (Inbound)
 ```bash
@@ -62,7 +65,7 @@ module "security_group_for_rds" {
 ```bash
 
 module "rds_intance" {
-  source = "git@github.com:luumiglioranca/tf-aws-db-rds-instance.git//resources"
+  source = "git@github.com:luumiglioranca/tf-aws-db-rds-instance.git//develop+homolog/resources"
 
   # Configurações do RDS
   db_name              = local.resource_name
@@ -116,7 +119,6 @@ module "rds_intance" {
     subnet_ids = [
       tolist(data.aws_subnet_ids.subnet_priv.ids)[0],
       tolist(data.aws_subnet_ids.subnet_priv.ids)[1]
-      #tolist(data.aws_subnet_ids.subnet_priv.ids)[2]
     ]
   }]
 
